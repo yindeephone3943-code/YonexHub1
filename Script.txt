@@ -1,0 +1,204 @@
+-- ========================================================
+-- YonexHub UI Theme Setup
+-- ========================================================
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local MainUICorner = Instance.new("UICorner")
+local MainUIStroke = Instance.new("UIStroke")
+local MainUIGradient = Instance.new("UIGradient")
+
+local TitleLabel = Instance.new("TextLabel")
+local TextBox = Instance.new("TextBox")
+local TextBoxCorner = Instance.new("UICorner")
+local TextBoxStroke = Instance.new("UIStroke")
+
+-- ตรวจสอบและลงใน CoreGui หรือ PlayerGui
+local Success, _ = pcall(function()
+    ScreenGui.Parent = game:GetService("CoreGui")
+end)
+if not Success then
+    ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+end
+
+ScreenGui.Name = "YonexHubUI"
+ScreenGui.ResetOnSpawn = false
+
+-- กรอบหลัก (Main Frame)
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 22)
+MainFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
+MainFrame.Size = UDim2.new(0, 280, 0, 360)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+MainUICorner.CornerRadius = UDim.new(0, 12)
+MainUICorner.Parent = MainFrame
+
+-- เส้นขอบนีออนเรืองแสง
+MainUIStroke.Parent = MainFrame
+MainUIStroke.Thickness = 2
+MainUIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainUIStroke.Color = Color3.fromRGB(0, 255, 204)
+
+MainUIGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 255, 204)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(150, 0, 255))
+}
+MainUIGradient.Parent = MainUIStroke
+
+-- หัวข้อ UI (เปลี่ยนชื่อค่ายเป็น YonexHub)
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Parent = MainFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0, 0, 0.02, 0)
+TitleLabel.Size = UDim2.new(1, 0, 0.08, 0)
+TitleLabel.Font = Enum.Font.FredokaOne
+TitleLabel.Text = "⚡ YONEXHUB ⚡"
+TitleLabel.TextColor3 = Color3.fromRGB(0, 255, 204)
+TitleLabel.TextSize = 16.000
+
+-- ช่องกรอกโค้ด
+TextBox.Parent = MainFrame
+TextBox.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+TextBox.Position = UDim2.new(0.07, 0, 0.12, 0)
+TextBox.Size = UDim2.new(0.86, 0, 0.13, 0)
+TextBox.Font = Enum.Font.Code
+TextBox.PlaceholderText = "-- วางโค้ดที่นี่..."
+TextBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+TextBox.Text = ""
+TextBox.TextColor3 = Color3.fromRGB(0, 255, 170)
+TextBox.TextSize = 14.000
+TextBox.ClearTextOnFocus = false
+
+TextBoxCorner.CornerRadius = UDim.new(0, 8)
+TextBoxCorner.Parent = TextBox
+
+TextBoxStroke.Parent = TextBox
+TextBoxStroke.Thickness = 1
+TextBoxStroke.Color = Color3.fromRGB(50, 50, 80)
+
+-- ตัวแปรระบบ
+local savedCode = ""
+local historyList = {}
+local autoRun = false
+
+-- ฟังก์ชันสร้างปุ่ม
+local function createCustomButton(name, text, startColor, endColor, positionY, callback)
+    local button = Instance.new("TextButton")
+    local btnCorner = Instance.new("UICorner")
+    local btnStroke = Instance.new("UIStroke")
+    local btnGradient = Instance.new("UIGradient")
+
+    button.Name = name
+    button.Parent = MainFrame
+    button.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    button.Position = UDim2.new(0.07, 0, positionY, 0)
+    button.Size = UDim2.new(0.86, 0, 0.11, 0)
+    button.Font = Enum.Font.FredokaOne
+    button.Text = text
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 14.000
+    button.AutoButtonColor = true
+
+    btnCorner.CornerRadius = UDim.new(0, 8)
+    btnCorner.Parent = button
+
+    btnStroke.Parent = button
+    btnStroke.Thickness = 1
+    btnStroke.Color = Color3.fromRGB(255, 255, 255)
+    btnStroke.Transparency = 0.8
+
+    btnGradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, startColor),
+        ColorSequenceKeypoint.new(1, endColor)
+    }
+    btnGradient.Parent = button
+
+    button.MouseButton1Click:Connect(function()
+        callback(button, btnGradient)
+    end)
+    return button
+end
+
+-- 1. ปุ่มคัดลอกโค้ด
+createCustomButton("CopyBtn", "📋  1. คัดลอกโค้ด", Color3.fromRGB(0, 119, 255), Color3.fromRGB(0, 225, 255), 0.28, function()
+    if TextBox.Text ~= "" then
+        if setclipboard then
+            setclipboard(TextBox.Text)
+        elseif toclipboard then
+            toclipboard(TextBox.Text)
+        end
+        print("[YonexHub] คัดลอกโค้ดเรียบร้อยแล้ว!")
+    end
+end)
+
+-- ฟังก์ชันสำหรับรันโค้ด
+local function executeCode(code)
+    if code and code ~= "" then
+        local func, err = loadstring(code)
+        if func then
+            task.spawn(func)
+        else
+            warn("[YonexHub Error]: " .. tostring(err))
+        end
+    end
+end
+
+-- 2. ปุ่มรันโค้ด 1 ครั้ง
+createCustomButton("RunOnceBtn", "▶️  2. รันโค้ด 1 ครั้ง", Color3.fromRGB(0, 180, 80), Color3.fromRGB(0, 255, 120), 0.41, function()
+    executeCode(TextBox.Text)
+end)
+
+-- 3. ปุ่มบันทึกโค้ด
+createCustomButton("SaveBtn", "💾  3. บันทึกโค้ด", Color3.fromRGB(70, 70, 90), Color3.fromRGB(110, 110, 140), 0.54, function()
+    if TextBox.Text ~= "" then
+        savedCode = TextBox.Text
+        table.insert(historyList, savedCode)
+        print("[YonexHub] บันทึกโค้ดสำเร็จ!")
+    end
+end)
+
+-- 4. ปุ่มประวัติบันทึก
+createCustomButton("HistoryBtn", "📜  4. ประวัติบันทึก", Color3.fromRGB(130, 0, 200), Color3.fromRGB(200, 0, 255), 0.67, function()
+    if #historyList > 0 then
+        TextBox.Text = historyList[#historyList]
+        print("[YonexHub] โหลดโค้ดล่าสุดจากประวัติแล้ว")
+    else
+        print("[YonexHub] ยังไม่มีประวัติที่บันทึกไว้")
+    end
+end)
+
+-- 5. ปุ่มรันรัวๆ MAX SPEED 🔥
+createCustomButton("AutoRunBtn", "⚡  5. รันรัวๆ: OFF", Color3.fromRGB(180, 0, 40), Color3.fromRGB(255, 50, 50), 0.80, function(btn, gradient)
+    autoRun = not autoRun
+    if autoRun then
+        btn.Text = "🔥  5. รันรัวๆ: MAX ON"
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 100, 0)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 80))
+        }
+        
+        -- โหมด Multi-thread ความเร็วสูงสุด
+        for i = 1, 5 do
+            task.spawn(function()
+                while autoRun do
+                    local code = TextBox.Text
+                    if code and code ~= "" then
+                        local func = loadstring(code)
+                        if func then
+                            pcall(func)
+                        end
+                    end
+                    task.wait()
+                end
+            end)
+        end
+    else
+        btn.Text = "⚡  5. รันรัวๆ: OFF"
+        gradient.Color = ColorSequence.new{
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(180, 0, 40)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 50, 50))
+        }
+    end
+end)
